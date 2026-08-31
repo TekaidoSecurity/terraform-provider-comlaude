@@ -1,3 +1,3 @@
-provider "scaffolding" {
+provider "comlaude" {
   # example configuration here
 }

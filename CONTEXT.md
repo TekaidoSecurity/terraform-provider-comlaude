@@ -15,7 +15,7 @@ A Group that can hold domains; accounts form a tree under a root Group.
 A registered domain name held in an Account. Read-only in v1 (data source); its lifecycle is driven by Domain Orders, not direct CRUD.
 
 **Zone**:
-A DNS zone attached to a Domain, holding Resource Records. A zone can be **active** (its record changes are delegated to live DNS) and cannot be deleted while active.
+A DNS zone attached to a Domain, holding Resource Records. A Domain can hold several zones with at most one **active** (serving live DNS): activating a zone deactivates the domain's others, and a zone cannot be deleted while active.
 _Avoid_: DNS zone file (the BIND export is a representation, not the zone)
 
 **Resource Record**:
