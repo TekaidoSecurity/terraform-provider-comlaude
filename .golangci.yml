@@ -29,6 +29,12 @@ linters:
       - third_party$
       - builtin$
       - examples$
+    rules:
+      # Test files stand up throwaway httptest handlers where unchecked
+      # w.Write / r.ParseForm returns are irrelevant.
+      - path: _test\.go
+        linters:
+          - errcheck
   settings:
     depguard:
       rules:

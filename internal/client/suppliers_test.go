@@ -26,12 +26,12 @@ const oneZoneOnS1 = `{"errors":[],"messages":[],"data":[
 	{"id":"z-live","active":true,"supplier":{"id":"s-1","name":"NS1","key":"dns_supplier_ns1"}}
 ],"status_code":200}`
 
-func supplierTestServer(t *testing.T, suppliers, zones string) *Client {
+func supplierTestServer(t *testing.T, zones string) *Client {
 	t.Helper()
 	srv := newAuthedTestServer(t, nil, func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/suppliers":
-			w.Write([]byte(suppliers))
+			w.Write([]byte(suppliersOK))
 		case strings.HasSuffix(r.URL.Path, "/zones"):
 			w.Write([]byte(zones))
 		default:
@@ -43,7 +43,7 @@ func supplierTestServer(t *testing.T, suppliers, zones string) *Client {
 }
 
 func TestResolveDNSSupplierAutoPicksTheOnlyUnused(t *testing.T) {
-	c := supplierTestServer(t, suppliersOK, oneZoneOnS1)
+	c := supplierTestServer(t, oneZoneOnS1)
 	s, err := c.ResolveDNSSupplier(context.Background(), "g-1", "d-1", "")
 	if err != nil {
 		t.Fatalf("ResolveDNSSupplier: %v", err)
@@ -57,7 +57,7 @@ func TestResolveDNSSupplierAutoPicksTheOnlyUnused(t *testing.T) {
 
 func TestResolveDNSSupplierAmbiguityListsCandidates(t *testing.T) {
 	noZones := `{"errors":[],"messages":[],"data":[],"status_code":200}`
-	c := supplierTestServer(t, suppliersOK, noZones)
+	c := supplierTestServer(t, noZones)
 	_, err := c.ResolveDNSSupplier(context.Background(), "g-1", "d-1", "")
 	var amb *AmbiguousSupplierError
 	if !errors.As(err, &amb) {
@@ -76,7 +76,7 @@ func TestResolveDNSSupplierAmbiguityListsCandidates(t *testing.T) {
 func TestResolveDNSSupplierBySelector(t *testing.T) {
 	noZones := `{"errors":[],"messages":[],"data":[],"status_code":200}`
 	for _, selector := range []string{"NS1", "dns_supplier_ns1", "s-1"} {
-		c := supplierTestServer(t, suppliersOK, noZones)
+		c := supplierTestServer(t, noZones)
 		s, err := c.ResolveDNSSupplier(context.Background(), "g-1", "d-1", selector)
 		if err != nil {
 			t.Fatalf("selector %q: %v", selector, err)
@@ -88,7 +88,7 @@ func TestResolveDNSSupplierBySelector(t *testing.T) {
 }
 
 func TestResolveDNSSupplierSelectorAlreadyUsed(t *testing.T) {
-	c := supplierTestServer(t, suppliersOK, oneZoneOnS1)
+	c := supplierTestServer(t, oneZoneOnS1)
 	_, err := c.ResolveDNSSupplier(context.Background(), "g-1", "d-1", "NS1")
 	if err == nil || !strings.Contains(err.Error(), "already has a zone") {
 		t.Fatalf("selecting a used supplier must be pre-empted with a clear error, got %v", err)
@@ -97,7 +97,7 @@ func TestResolveDNSSupplierSelectorAlreadyUsed(t *testing.T) {
 
 func TestResolveDNSSupplierUnknownSelectorListsOptions(t *testing.T) {
 	noZones := `{"errors":[],"messages":[],"data":[],"status_code":200}`
-	c := supplierTestServer(t, suppliersOK, noZones)
+	c := supplierTestServer(t, noZones)
 	_, err := c.ResolveDNSSupplier(context.Background(), "g-1", "d-1", "Cloudflare")
 	if err == nil || !strings.Contains(err.Error(), "Com Laude DNS") {
 		t.Fatalf("unknown selector error must list available DNS suppliers, got %v", err)

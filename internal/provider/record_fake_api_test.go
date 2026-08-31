@@ -30,15 +30,14 @@ type fakeRecordAPI struct {
 }
 
 type fakeRecord struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Type     string  `json:"type"`
-	TTL      int64   `json:"ttl"`
-	Value    string  `json:"value"`
-	Locked   int     `json:"locked"`
-	Priority *int64  `json:"priority,omitempty"`
-	Zone     any     `json:"zone"`
-	priority *string // raw form value, for assertions
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	TTL      int64  `json:"ttl"`
+	Value    string `json:"value"`
+	Locked   int    `json:"locked"`
+	Priority *int64 `json:"priority,omitempty"`
+	Zone     any    `json:"zone"`
 }
 
 func newFakeRecordAPI(t *testing.T) (*fakeRecordAPI, *httptest.Server) {
@@ -116,8 +115,8 @@ func (f *fakeRecordAPI) handleRecords(w http.ResponseWriter, r *http.Request) {
 		recordID = parts[5]
 	}
 
-	switch {
-	case r.Method == http.MethodGet:
+	switch r.Method {
+	case http.MethodGet:
 		var list []fakeRecord
 		for _, rec := range store {
 			rec.Zone = f.zoneJSON(zoneID)
@@ -125,7 +124,7 @@ func (f *fakeRecordAPI) handleRecords(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write(f.envelope(list))
 
-	case r.Method == http.MethodPost:
+	case http.MethodPost:
 		r.ParseForm()
 		name := r.PostForm.Get("name")
 		if !strings.HasSuffix(name, f.zoneDomain[zoneID]) {
@@ -137,9 +136,9 @@ func (f *fakeRecordAPI) handleRecords(w http.ResponseWriter, r *http.Request) {
 		f.creates++
 		id := fmt.Sprintf("rec-%d", f.seq)
 		store[id] = f.recordFromForm(id, r)
-		w.Write([]byte(fmt.Sprintf(`{"errors":[],"messages":[],"data":{"id":%q},"status_code":200}`, id)))
+		fmt.Fprintf(w, `{"errors":[],"messages":[],"data":{"id":%q},"status_code":200}`, id)
 
-	case r.Method == http.MethodPut:
+	case http.MethodPut:
 		if _, exists := store[recordID]; !exists {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte(`{"status_code":404,"data":[],"messages":[],"errors":[{"code":"not_found","message":"Record not found"}]}`))
@@ -149,7 +148,7 @@ func (f *fakeRecordAPI) handleRecords(w http.ResponseWriter, r *http.Request) {
 		store[recordID] = f.recordFromForm(recordID, r)
 		w.Write(f.envelope([]any{}))
 
-	case r.Method == http.MethodDelete:
+	case http.MethodDelete:
 		delete(store, recordID)
 		w.Write(f.envelope([]any{}))
 	}
