@@ -41,8 +41,9 @@ type Client struct {
 	httpClient     *http.Client
 	retryBaseDelay time.Duration
 
-	mu    sync.Mutex // guards token; login happens under the lock (single-flight)
-	token string
+	mu          sync.Mutex // guards token and zoneDomains; login happens under the lock (single-flight)
+	token       string
+	zoneDomains map[string]string // (groupID/zoneID) -> domain name
 }
 
 // Option customizes a Client.
@@ -68,6 +69,7 @@ func New(baseURL, username, password, apiKey string, opts ...Option) *Client {
 		apiKey:         apiKey,
 		httpClient:     &http.Client{Timeout: requestTimeout},
 		retryBaseDelay: defaultRetryBaseDelay,
+		zoneDomains:    map[string]string{},
 	}
 	for _, o := range opts {
 		o(c)

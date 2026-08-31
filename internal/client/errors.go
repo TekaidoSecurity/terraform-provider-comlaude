@@ -30,14 +30,14 @@ func mapStatusError(status int, body []byte) error {
 	msgs := env.Errors
 
 	switch {
+	case status == 400 || status == 422:
+		return apiError(ErrValidation, status, msgs)
 	case status == 401 || status == 403:
 		return apiError(ErrAuth, status, msgs)
 	case status == 402:
 		return apiError(ErrPaymentRequired, status, msgs)
 	case status == 404:
 		return apiError(ErrNotFound, status, msgs)
-	case status == 422:
-		return apiError(ErrValidation, status, msgs)
 	case status == 423:
 		return apiError(ErrLocked, status, msgs)
 	case status == 429:
@@ -57,6 +57,17 @@ func apiError(sentinel error, status int, msgs []APIMessage) error {
 	parts := make([]string, 0, len(msgs))
 	for _, m := range msgs {
 		parts = append(parts, m.Message)
+		// Validation failures carry per-field details as an object of
+		// message lists; other responses use an empty array. Render the
+		// object form, ignore the rest.
+		var details map[string][]string
+		if len(m.Details) > 0 && json.Unmarshal(m.Details, &details) == nil {
+			for field, fieldMsgs := range details {
+				for _, fm := range fieldMsgs {
+					parts = append(parts, fmt.Sprintf("%s: %s", field, fm))
+				}
+			}
+		}
 	}
 	return fmt.Errorf("%w (HTTP %d): %s", sentinel, status, strings.Join(parts, "; "))
 }

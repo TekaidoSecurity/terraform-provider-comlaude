@@ -76,7 +76,7 @@ One polymorphic resource:
 - **All in-place updates** (PUT full-replace keeps the id) except `zone_id`/`group_id`.
 - Import: `<group_id>/<zone_id>/<record_id>`.
 - Docs must warn: changes in an active zone delegate to live DNS.
-- **Open verification** (rides in the first acceptance smoke test): does create accept relative names, FQDNs, or both? Adjust the client's name translation to whatever the `tfacc-probe` TXT round-trip shows.
+- **Verified** (tfacc-probe, 2026-08-31): create **requires FQDNs** — relative names are rejected 400 with a per-field `details` map ("The name must end with the current domain name"). Create returns only `{id}` (Read-after-create hydrates); single-record GET is 405 (Read paginates the list); the record's embedded `zone` object carries `domain.name`. The client translates relative↔FQDN via `ResolveZoneDomain` (record-embed → domain-list `active_zone` match → per-domain zone walk, cached per zone).
 
 ## 6. Resource `comlaude_zone`
 

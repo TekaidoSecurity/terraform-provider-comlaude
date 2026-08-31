@@ -18,12 +18,38 @@ type Envelope[T any] struct {
 	Messages   []APIMessage    `json:"messages"`
 	Data       json.RawMessage `json:"data"`
 	StatusCode int             `json:"status_code"`
+	Meta       *Meta           `json:"meta"`
 }
 
-// APIMessage is one entry of the envelope's errors/messages arrays.
+// Meta carries list metadata.
+type Meta struct {
+	Pagination *Pagination `json:"pagination"`
+}
+
+// Pagination is the API's page-based list metadata.
+type Pagination struct {
+	Total       int `json:"total"`
+	Count       int `json:"count"`
+	PerPage     int `json:"per_page"`
+	CurrentPage int `json:"current_page"`
+	TotalPages  int `json:"total_pages"`
+}
+
+// APIMessage is one entry of the envelope's errors/messages arrays. Details
+// is polymorphic on the wire: an object of per-field message lists on
+// validation failures, an empty array otherwise.
 type APIMessage struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code    string          `json:"code"`
+	Message string          `json:"message"`
+	Details json.RawMessage `json:"details"`
+}
+
+// unmarshalEnvelope decodes a raw body into an envelope with a uniform error.
+func unmarshalEnvelope[T any](raw []byte, env *Envelope[T]) error {
+	if err := json.Unmarshal(raw, env); err != nil {
+		return fmt.Errorf("decoding API response envelope: %w", err)
+	}
+	return nil
 }
 
 // One returns the single object carried by data, tolerating both wire shapes:
