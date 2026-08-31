@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) HashiCorp, Inc.
+# Copyright (c) Tekaido Security
 # SPDX-License-Identifier: MPL-2.0
 
 #

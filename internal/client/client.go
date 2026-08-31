@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2021, 2025
+// Copyright (c) Tekaido Security
 // SPDX-License-Identifier: MPL-2.0
 
 // Package client is the hand-written Comlaude API client (ADR-0001). It owns
