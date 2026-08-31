@@ -1,1 +1,0 @@
-terraform import comlaude_example.test "id-123"

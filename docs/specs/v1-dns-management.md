@@ -109,7 +109,7 @@ One polymorphic resource:
 
 [Ticket #12](https://github.com/TekaidoSecurity/terraform-provider-comlaude/issues/12); standing split from the map Notes.
 
-**CI (network-free)**: unit tests + HTTP-mocked tests against `httptest.Server` replaying fixtures from `internal/client/testdata/` — sanitized live captures (UUIDs randomized, domain replaced), refreshed via a `-capture` flag on acceptance runs. Mocks must cover both `data` envelope shapes, the 401-relogin-replay path, retry/backoff behavior, and the zone destroy-while-active diagnostic.
+**CI (network-free)**: unit tests + HTTP-mocked tests against `httptest.Server`. *(As built: fixtures are inline constants in the test files, shaped from sanitized live captures and updated by re-probing; the planned `internal/client/testdata/` golden files + `-capture` refresh flag were dropped — inline fixtures emerged naturally from TDD and a refresh mechanism would have had no consumer.)* Mocks must cover both `data` envelope shapes, the 401-relogin-replay path, retry/backoff behavior, and the zone destroy-while-active diagnostic.
 
 **Acceptance (manual, live)**:
 - `make testacc`: parses `~/.config/comlaude/env` (key=value — **never `source`**; values are unquoted and may contain spaces) when `COMLAUDE_*` unset; sets `TF_ACC=1`; 30m timeout; **refuses to run without `COMLAUDE_TEST_DOMAIN`**.

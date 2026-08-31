@@ -1,64 +1,33 @@
-# Terraform Provider Comlaude (Terraform Plugin Framework)
+# Terraform Provider for Com Laude
 
-_This template repository is built on the [Terraform Plugin Framework](https://github.com/hashicorp/terraform-plugin-framework). The template repository built on the [Terraform Plugin SDK](https://github.com/hashicorp/terraform-plugin-sdk) can be found at [terraform-provider-comlaude](https://github.com/hashicorp/terraform-provider-comlaude). See [Which SDK Should I Use?](https://developer.hashicorp.com/terraform/plugin/framework-benefits) in the Terraform documentation for additional information._
+Manage DNS on the [Com Laude](https://comlaude.com) corporate registrar as code: DNS records and zones, with domain lookup.
 
-This repository is a *template* for a [Terraform](https://www.terraform.io) provider. It is intended as a starting point for creating Terraform providers, containing:
+- **Resources**: `comlaude_dns_record`, `comlaude_zone`
+- **Data source**: `comlaude_domain`
+- Registry documentation lives in [`docs/`](docs/index.md); runnable configuration in [`examples/`](examples/).
 
-- A resource and a data source (`internal/provider/`),
-- Examples (`examples/`) and generated documentation (`docs/`),
-- Miscellaneous meta files.
+```hcl
+provider "comlaude" {} # credentials via COMLAUDE_USERNAME / COMLAUDE_PASSWORD / COMLAUDE_API_KEY
 
-These files contain boilerplate code that you will need to edit to create your own Terraform provider. Tutorials for creating Terraform providers can be found on the [HashiCorp Developer](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework) platform. _Terraform Plugin Framework specific guides are titled accordingly._
+data "comlaude_domain" "main" {
+  name = "example.com"
+}
 
-Please see the [GitHub template repository documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) for how to create a new repository from this template on GitHub.
-
-Once you've written your provider, you'll want to [publish it on the Terraform Registry](https://developer.hashicorp.com/terraform/registry/providers/publishing) so that others can use it.
-
-## Requirements
-
-- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.24
-
-## Building the Provider
-
-1. Clone the repository
-1. Enter the repository directory
-1. Build the provider using the Go `install` command:
-
-```shell
-go install
+resource "comlaude_dns_record" "www" {
+  zone_id = data.comlaude_domain.main.active_zone_id
+  name    = "www"
+  type    = "A"
+  ttl     = 3600
+  value   = "192.0.2.10"
+}
 ```
 
-## Adding Dependencies
+Authentication uses Com Laude's `POST /api_login` and needs three credentials (username, password, API key) for a service user with the "web login" property enabled.
 
-This provider uses [Go modules](https://github.com/golang/go/wiki/Modules).
-Please see the Go documentation for the most up to date information about using Go modules.
+## Development
 
-To add a new dependency `github.com/author/dependency` to your Terraform provider:
-
-```shell
-go get github.com/author/dependency
-go mod tidy
-```
-
-Then commit the changes to `go.mod` and `go.sum`.
-
-## Using the Provider
-
-Fill this in for each provider
-
-## Developing the Provider
-
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
-
-To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
-
-To generate or update documentation, run `make generate`.
-
-In order to run the full suite of Acceptance tests, run `make testacc`.
-
-*Note:* Acceptance tests create real resources, and often cost money to run.
-
-```shell
-make testacc
-```
+- Go >= 1.24 and Terraform >= 1.0.
+- `go build ./...` builds; `make test` runs the unit and HTTP-mocked suites (no credentials, no live API traffic).
+- `make generate` regenerates registry docs (tfplugindocs); CI fails on drift.
+- `make testacc` runs acceptance tests **against the live API**, strictly scoped to the designated test domain; it refuses to run without `COMLAUDE_TEST_DOMAIN`. See `scripts/testacc.sh`. Credentials are collected once by `scripts/comlaude-credentials-wizard.sh` into `~/.config/comlaude/env`.
+- Design decisions: [`docs/adr/`](docs/adr/) and the v1 spec at [`docs/specs/v1-dns-management.md`](docs/specs/v1-dns-management.md).

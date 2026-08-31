@@ -10,10 +10,7 @@ import (
 
 	"github.com/TekaidoSecurity/terraform-provider-comlaude/internal/client"
 
-	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
-	"github.com/hashicorp/terraform-plugin-framework/function"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -22,9 +19,6 @@ import (
 
 // Ensure ComlaudeProvider satisfies various provider interfaces.
 var _ provider.Provider = &ComlaudeProvider{}
-var _ provider.ProviderWithFunctions = &ComlaudeProvider{}
-var _ provider.ProviderWithEphemeralResources = &ComlaudeProvider{}
-var _ provider.ProviderWithActions = &ComlaudeProvider{}
 
 // ComlaudeProvider defines the provider implementation.
 type ComlaudeProvider struct {
@@ -168,32 +162,12 @@ func (p *ComlaudeProvider) Resources(ctx context.Context) []func() resource.Reso
 	return []func() resource.Resource{
 		NewDnsRecordResource,
 		NewZoneResource,
-		NewExampleResource,
-	}
-}
-
-func (p *ComlaudeProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
-	return []func() ephemeral.EphemeralResource{
-		NewExampleEphemeralResource,
 	}
 }
 
 func (p *ComlaudeProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewDomainDataSource,
-		NewExampleDataSource,
-	}
-}
-
-func (p *ComlaudeProvider) Functions(ctx context.Context) []func() function.Function {
-	return []func() function.Function{
-		NewExampleFunction,
-	}
-}
-
-func (p *ComlaudeProvider) Actions(ctx context.Context) []func() action.Action {
-	return []func() action.Action{
-		NewExampleAction,
 	}
 }
 
