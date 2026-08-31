@@ -210,36 +210,46 @@ confirm "Is the CHANGELOG committed and pushed?" || exit 1
 stage "GPG signing key"
 say "A dedicated org signing key: the registry verifies release checksums with it."
 ask GPG_EMAIL "Email address for the signing key identity:"
-ask_secret GPG_PASSPHRASE "Choose a passphrase for the key:"
-IDENTITY="Tekaido Security Terraform Provider Signing <$GPG_EMAIL>"
-say "Generating RSA-4096 signing key for: $IDENTITY"
-gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
-  --quick-generate-key "$IDENTITY" rsa4096 sign never
-FPR=$(gpg --list-secret-keys --with-colons "$GPG_EMAIL" | awk -F: '/^fpr:/ {print $10; exit}')
-note "fingerprint: $FPR"
-PRIVATE_KEY=$(gpg --armor --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --export-secret-keys "$FPR")
-set_secret GPG_PRIVATE_KEY "$PRIVATE_KEY"
-set_secret PASSPHRASE "$GPG_PASSPHRASE"
+FPR=$(gpg --list-secret-keys --with-colons "$GPG_EMAIL" 2>/dev/null | awk -F: '/^fpr:/ {print $10; exit}')
+if [[ -n "$FPR" ]]; then
+  say "Signing key already exists (fingerprint $FPR): reusing it."
+  note "Assuming GPG_PRIVATE_KEY and PASSPHRASE secrets were already set on the first run."
+else
+  ask_secret GPG_PASSPHRASE "Choose a passphrase for the key:"
+  IDENTITY="Tekaido Security Terraform Provider Signing <$GPG_EMAIL>"
+  say "Generating RSA-4096 signing key for: $IDENTITY"
+  gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+    --quick-generate-key "$IDENTITY" rsa4096 sign never
+  FPR=$(gpg --list-secret-keys --with-colons "$GPG_EMAIL" | awk -F: '/^fpr:/ {print $10; exit}')
+  note "fingerprint: $FPR"
+  PRIVATE_KEY=$(gpg --armor --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --export-secret-keys "$FPR")
+  set_secret GPG_PRIVATE_KEY "$PRIVATE_KEY"
+  set_secret PASSPHRASE "$GPG_PASSPHRASE"
+fi
 gpg --armor --export "$FPR" > /tmp/comlaude-provider-signing-public.asc
 say "Public key exported to /tmp/comlaude-provider-signing-public.asc (needed in stage 5)."
 
 # ── Stage 3: repo goes public ─────────────────────────────────────────────
 stage "Make the repository public"
+if [[ "$(gh repo view "$REPO" --json visibility --jq .visibility)" == "PUBLIC" ]]; then
+  say "Repository is already public: skipping."
+elif true; then
 warn "This publishes the full history of $REPO. Point of no easy return."
 if confirm "Make $REPO public now?"; then
-  gh repo edit "$REPO" --visibility public --accept-visibility-changes
+  gh repo edit "$REPO" --visibility public --accept-visibility-change-consequences
   say "Repository is public."
 else
   warn "Skipped. The registry cannot ingest a private repo; rerun when ready."
   exit 1
+fi
 fi
 
 # ── Stage 4: tag and release ──────────────────────────────────────────────
 stage "Tag $VERSION and let goreleaser build"
 step "Tagging the current commit and pushing the tag triggers the signed release build."
 if confirm "Create and push tag $VERSION now?"; then
-  git tag "$VERSION"
-  git push origin "$VERSION"
+  git rev-parse "$VERSION" >/dev/null 2>&1 || git tag "$VERSION"
+  git ls-remote --exit-code origin "refs/tags/$VERSION" >/dev/null 2>&1 || git push origin "$VERSION"
   say "Tag pushed. Watching the Release workflow (this builds, signs, and uploads)..."
   sleep 10
   gh run watch -R "$REPO" $(gh run list -R "$REPO" --workflow Release --limit 1 --json databaseId --jq '.[0].databaseId') --exit-status
