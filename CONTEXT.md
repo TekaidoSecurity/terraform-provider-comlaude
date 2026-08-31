@@ -19,8 +19,12 @@ A DNS zone attached to a Domain, holding Resource Records. A zone can be **activ
 _Avoid_: DNS zone file (the BIND export is a representation, not the zone)
 
 **Resource Record**:
-A single DNS entry inside a Zone (A, AAAA, CNAME, MX, TXT, SRV, CAA, DS, NS, PTR, plus Com Laude's MXDUMMY and REDIRECT pseudo-types).
+A single DNS entry inside a Zone (A, AAAA, CNAME, MX, TXT, SRV, CAA, DS, NS, PTR, plus Com Laude's MXDUMMY and REDIRECT pseudo-types). REDIRECT is web forwarding dressed as a record, not real DNS data.
 _Avoid_: DNS entry, record set (records are individual, not grouped by name/type)
+
+**Apex**:
+The record name equal to the Zone's domain itself, written `@` in configuration and returned as the bare FQDN by the API.
+_Avoid_: root record, naked domain
 
 **Domain Order**:
 The async job object through which all domain lifecycle mutations happen (registration, transfer, renewal, lapse, locks). Polled for completion; never updated or cancelled. Out of scope for v1.
