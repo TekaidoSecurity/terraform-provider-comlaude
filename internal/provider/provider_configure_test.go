@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -15,8 +16,7 @@ import (
 )
 
 // These tests exercise provider Configure through a real Terraform plan via
-// the (temporary) scaffolding example data source; they will be re-pointed at
-// comlaude_domain when it lands. The mock server stands in for the API.
+// the comlaude_domain data source. The mock server stands in for the API.
 
 const mockLoginOK = `{"errors":[],"messages":[],"data":{"token_type":"Bearer","expires_in":7200,"access_token":"test-jwt","refresh_token":"r"},"status_code":200}`
 const mockLoginBad = `{"errors":[{"code":"invalid_credentials","message":"These credentials do not match our records"}],"messages":[],"data":[],"status_code":401}`
@@ -31,8 +31,8 @@ func newMockAPI(t *testing.T, badCreds bool) (*httptest.Server, *apiCounters) {
 	t.Helper()
 	counters := &apiCounters{}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/api_login":
+		switch {
+		case r.URL.Path == "/api_login":
 			counters.logins.Add(1)
 			if badCreds {
 				w.WriteHeader(http.StatusUnauthorized)
@@ -40,9 +40,11 @@ func newMockAPI(t *testing.T, badCreds bool) (*httptest.Server, *apiCounters) {
 				return
 			}
 			w.Write([]byte(mockLoginOK))
-		case "/profile":
+		case r.URL.Path == "/profile":
 			counters.profiles.Add(1)
 			w.Write([]byte(mockProfileOK))
+		case strings.HasSuffix(r.URL.Path, "/domains"):
+			w.Write([]byte(mockDomainList))
 		default:
 			t.Errorf("unexpected API call: %s %s", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
@@ -59,8 +61,8 @@ provider "comlaude" {
   %s
 }
 
-data "comlaude_example" "probe" {
-  configurable_attribute = "x"
+data "comlaude_domain" "probe" {
+  name = "example-lab.com"
 }
 `, baseURL, extraProviderAttrs)
 }

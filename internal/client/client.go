@@ -261,6 +261,19 @@ func (c *Client) reloginAfter401(ctx context.Context, stale string) (string, err
 	return c.token, nil
 }
 
+// many runs a request and decodes a collection out of the envelope.
+func many[T any](ctx context.Context, c *Client, method, path string) ([]T, error) {
+	raw, err := c.do(ctx, method, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	var env Envelope[T]
+	if err := json.Unmarshal(raw, &env); err != nil {
+		return nil, fmt.Errorf("decoding %s %s response: %w", method, path, err)
+	}
+	return env.Many()
+}
+
 // one runs a request and decodes a single object out of the envelope.
 func one[T any](ctx context.Context, c *Client, method, path string) (T, error) {
 	var zero T

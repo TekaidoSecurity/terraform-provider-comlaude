@@ -178,6 +178,7 @@ func (p *ComlaudeProvider) EphemeralResources(ctx context.Context) []func() ephe
 
 func (p *ComlaudeProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewDomainDataSource,
 		NewExampleDataSource,
 	}
 }

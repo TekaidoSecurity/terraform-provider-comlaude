@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -28,7 +29,11 @@ var testAccProtoV6ProviderFactoriesWithEcho = map[string]func() (tfprotov6.Provi
 }
 
 func testAccPreCheck(t *testing.T) {
-	// You can add code here to run prior to any test case execution, for example assertions
-	// about the appropriate environment variables being set are common to see in a pre-check
-	// function.
+	// Acceptance tests only ever touch the designated test domain; refusing
+	// to run without it is the harness's first safety rail.
+	for _, v := range []string{"COMLAUDE_USERNAME", "COMLAUDE_PASSWORD", "COMLAUDE_API_KEY", "COMLAUDE_TEST_DOMAIN"} {
+		if os.Getenv(v) == "" {
+			t.Fatalf("%s must be set for acceptance tests (use 'make testacc')", v)
+		}
+	}
 }
