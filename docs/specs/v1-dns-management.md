@@ -82,6 +82,8 @@ One polymorphic resource:
 
 [Ticket #6](https://github.com/TekaidoSecurity/terraform-provider-comlaude/issues/6). API: `POST /groups/{gid}/domains/{did}/zones`, `GET/PATCH/DELETE .../zones/{zid}`. Create/delete need the `zone-manager` role; create can 402.
 
+**Live-verified zone-create contract (2026-08-31, three clean rejections)**: `supplier_id` is REQUIRED on create (spec wrongly marks it optional); a domain holds at most ONE zone per supplier; and suppliers listed by `GET /suppliers` are not all entitled — the test account's two unused DNS suppliers were both rejected as "invalid", so no second zone can be created on the test domain at all. Consequence: the resource has an optional `supplier` attribute (name/key/id) with never-guess auto-resolution (sole candidate → automatic; several → error listing them); the live create path could not be acceptance-tested and is covered by mocks mirroring these rules — it should be verified once during the supervised pre-v0.1.0 check, ideally with Com Laude's guidance on a domain where creation is entitled.
+
 | Attribute | Type | Behavior |
 |---|---|---|
 | `group_id` | string, optional | provider default; **ForceNew** |

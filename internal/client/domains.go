@@ -39,12 +39,21 @@ type Account struct {
 // Zone is a DNS zone. Embedded in Domain as active_zone; also returned by
 // the zone endpoints.
 type Zone struct {
-	ID                  string `json:"id"`
-	Active              bool   `json:"active"`
-	Signed              bool   `json:"signed"`
-	DefaultRecordTTL    int64  `json:"default_record_ttl"`
-	ResourceRecordCount int64  `json:"resource_record_count"`
-	Networks            []int  `json:"networks"`
+	ID                  string    `json:"id"`
+	Active              bool      `json:"active"`
+	Signed              bool      `json:"signed"`
+	DefaultRecordTTL    int64     `json:"default_record_ttl"`
+	ResourceRecordCount int64     `json:"resource_record_count"`
+	Networks            []int     `json:"networks"`
+	Supplier            *Supplier `json:"supplier"`
+}
+
+// Supplier is the DNS platform a zone runs on. Zone creation requires a
+// supplier id (live-verified; the OpenAPI spec wrongly marks it optional).
+type Supplier struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Key  string `json:"key"`
 }
 
 // FindDomainByName looks a domain up by exact name within a group. The API's

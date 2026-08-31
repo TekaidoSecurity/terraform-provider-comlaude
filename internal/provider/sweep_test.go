@@ -51,6 +51,48 @@ func sweeperClient() (*client.Client, string, client.Domain, error) {
 }
 
 func init() {
+	resource.AddTestSweepers("comlaude_zone", &resource.Sweeper{
+		Name: "comlaude_zone",
+		F: func(_ string) error {
+			c, groupID, domain, err := sweeperClient()
+			if err != nil {
+				return err
+			}
+			ctx := context.Background()
+			zones, err := c.ListZones(ctx, groupID, domain.ID)
+			if err != nil {
+				return err
+			}
+			for _, z := range zones {
+				// Never the active zone, and only zones whose every record
+				// is tfacc- (an empty zone qualifies): anything else is not
+				// ours to delete.
+				if z.Active {
+					continue
+				}
+				records, err := c.ListRecords(ctx, groupID, z.ID)
+				if err != nil {
+					return err
+				}
+				ours := true
+				for _, rec := range records {
+					if !strings.HasPrefix(rec.Name, "tfacc-") {
+						ours = false
+						break
+					}
+				}
+				if !ours {
+					continue
+				}
+				if err := c.DeleteZone(ctx, groupID, domain.ID, z.ID); err != nil {
+					return fmt.Errorf("sweeping zone %s: %w", z.ID, err)
+				}
+				fmt.Printf("swept zone %s\n", z.ID)
+			}
+			return nil
+		},
+	})
+
 	resource.AddTestSweepers("comlaude_dns_record", &resource.Sweeper{
 		Name: "comlaude_dns_record",
 		F: func(_ string) error {

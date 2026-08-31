@@ -44,6 +44,7 @@ type Client struct {
 	mu          sync.Mutex // guards token and zoneDomains; login happens under the lock (single-flight)
 	token       string
 	zoneDomains map[string]string // (groupID/zoneID) -> domain name
+	suppliers   []Supplier        // account-wide reference data, fetched once
 }
 
 // Option customizes a Client.
