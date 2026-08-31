@@ -6,7 +6,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/action/schema"
@@ -24,7 +23,7 @@ func NewExampleAction() action.Action {
 
 // ExampleAction defines the action implementation.
 type ExampleAction struct {
-	client *http.Client
+	client *ProviderData
 }
 
 // ExampleActionModel describes the action data model.
@@ -56,12 +55,12 @@ func (e *ExampleAction) Configure(ctx context.Context, req action.ConfigureReque
 		return
 	}
 
-	client, ok := req.ProviderData.(*http.Client)
+	client, ok := req.ProviderData.(*ProviderData)
 
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected *http.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *ProviderData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return
